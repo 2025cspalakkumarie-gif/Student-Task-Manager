@@ -27,5 +27,10 @@ jobs:
           test -f script.js
           echo "All required project files exist!"
 
+      
+      - name: Install HTML validator
+        run: npm install --no-save html-validate
+
       - name: Validate HTML
-        run: npx --yes html-validate index.html
+        run: npx --no-install html-validate index.html
+
