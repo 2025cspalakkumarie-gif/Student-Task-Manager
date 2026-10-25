@@ -1,0 +1,31 @@
+
+name: Student Task Manager CI
+
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check-project:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get project code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check project files
+        run: |
+          test -f index.html
+          test -f style.css
+          test -f script.js
+          echo "All required project files exist!"
+
+      - name: Validate HTML
+        run: npx --yes html-validate index.html
