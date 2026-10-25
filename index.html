@@ -1,0 +1,38 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Task Manager</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="container">
+        <h1>Student Task Manager</h1>
+        <p class="subtitle">Organize your college tasks easily!</p>
+
+        <form id="taskForm">
+            <input
+                type="text"
+                id="taskInput"
+                placeholder="Enter your task..."
+                aria-label="Task name"
+                required
+            >
+            <button type="submit">Add Task</button>
+        </form>
+
+        <p id="message" role="status"></p>
+
+        <div class="summary">
+            <span>Total: <strong id="total">0</strong></span>
+            <span>Completed: <strong id="completed">0</strong></span>
+        </div>
+
+        <ul id="taskList"></ul>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
