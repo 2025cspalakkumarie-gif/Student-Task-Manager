@@ -2,37 +2,224 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Task Manager</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Taskly — Student Task Manager</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
 </head>
+
 <body>
-    <main class="container">
-        <h1>Student Task Manager</h1>
-        <p class="subtitle">Organize your college tasks easily!</p>
+  <div class="app-layout">
 
-        <form id="taskForm">
-            <input
-                type="text"
-                id="taskInput"
-                placeholder="Enter your task..."
-                aria-label="Task name"
-                required
-            >
-            <button type="submit">Add Task</button>
-        </form>
+    <aside class="sidebar">
+      <a class="brand" href="#">
+        <span class="brand-icon">✦</span>
+        <span>Taskly<span class="brand-dot">.</span></span>
+      </a>
 
-        <p id="message" role="status"></p>
+      <p class="sidebar-label">WORKSPACE</p>
 
-        <div class="summary">
-            <span>Total: <strong id="total">0</strong></span>
-            <span>Completed: <strong id="completed">0</strong></span>
+      <nav class="navigation">
+        <a class="nav-item active" href="#dashboard">🏠 <span>Dashboard</span></a>
+        <a class="nav-item" href="#tasks">📋 <span>My Tasks</span></a>
+        <a class="nav-item" href="#progress">📊 <span>My Progress</span></a>
+      </nav>
+
+      <div class="sidebar-note">
+        <span class="note-icon">🚀</span>
+        <h3>Keep going!</h3>
+        <p>Every small task takes you closer to your goals.</p>
+      </div>
+
+      <div class="profile">
+        <div class="avatar">🎓</div>
+        <div>
+          <strong>Student</strong>
+          <p>Productivity mode</p>
+        </div>
+        <span class="profile-menu">•••</span>
+      </div>
+    </aside>
+
+    <main class="main-content" id="dashboard">
+
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">YOUR PERSONAL WORKSPACE ✨</p>
+          <h1>My Dashboard</h1>
+          <p class="subtitle">Make today count, one task at a time.</p>
         </div>
 
-        <ul id="taskList"></ul>
-    </main>
+        <div class="topbar-actions">
+          <span class="today-badge">🌤️ Stay productive</span>
+          <button class="icon-button" id="themeToggle" type="button" aria-label="Toggle dark mode">🌙</button>
+        </div>
+      </header>
 
-    <script src="script.js"></script>
+      <section class="welcome-banner">
+        <div class="welcome-text">
+          <span class="welcome-tag">✨ NEW DAY, NEW GOALS</span>
+          <h2>Small steps.<br>Big achievements.</h2>
+          <p>Organize your studies and turn your plans into progress.</p>
+          <a class="banner-button" href="#tasks">Explore my tasks <span>→</span></a>
+        </div>
+        <div class="welcome-art" aria-hidden="true">
+          <div class="art-orbit orbit-one"></div>
+          <div class="art-orbit orbit-two"></div>
+          <div class="art-emoji">🎯</div>
+          <span class="floating-icon float-one">⭐</span>
+          <span class="floating-icon float-two">💜</span>
+          <span class="floating-icon float-three">📚</span>
+        </div>
+      </section>
+
+      <section class="stats-grid" aria-label="Task statistics">
+        <article class="stat-card stat-purple">
+          <div class="stat-top">
+            <span class="stat-icon">📚</span>
+            <span class="stat-label">ALL TASKS</span>
+          </div>
+          <p class="stat-number" id="totalTasks">0</p>
+          <p class="stat-description">Your planned activities</p>
+        </article>
+
+        <article class="stat-card stat-blue">
+          <div class="stat-top">
+            <span class="stat-icon">⏳</span>
+            <span class="stat-label">PENDING</span>
+          </div>
+          <p class="stat-number" id="pendingTasks">0</p>
+          <p class="stat-description">Still to be completed</p>
+        </article>
+
+        <article class="stat-card stat-green">
+          <div class="stat-top">
+            <span class="stat-icon">✅</span>
+            <span class="stat-label">COMPLETED</span>
+          </div>
+          <p class="stat-number" id="completedTasks">0</p>
+          <p class="stat-description">Tasks you've finished</p>
+        </article>
+
+        <article class="stat-card stat-orange">
+          <div class="stat-top">
+            <span class="stat-icon">🔥</span>
+            <span class="stat-label">COMPLETION</span>
+          </div>
+          <p class="stat-number"><span id="completionRate">0</span><span class="percent-sign">%</span></p>
+          <p class="stat-description">Your completion rate</p>
+        </article>
+      </section>
+
+      <section class="content-grid">
+
+        <div class="task-panel" id="tasks">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">STAY ON TRACK</p>
+              <h2>My Tasks <span>✍️</span></h2>
+            </div>
+            <span class="task-count" id="taskCountBadge">0 tasks</span>
+          </div>
+
+          <form id="taskForm" class="task-form">
+            <label class="input-label" for="taskInput">What do you need to do?</label>
+            <div class="input-row">
+              <span class="input-emoji">✏️</span>
+              <input id="taskInput" type="text" placeholder="e.g. Complete Java assignment..." maxlength="200" required>
+              <button class="add-button" type="submit"><span>＋</span> Add task</button>
+            </div>
+
+            <div class="form-options">
+              <label class="select-label" for="taskCategory">Category</label>
+              <select id="taskCategory">
+                <option value="Study">📚 Study</option>
+                <option value="Coding">💻 Coding</option>
+                <option value="Assignment">📝 Assignment</option>
+                <option value="Personal">🌱 Personal</option>
+              </select>
+
+              <label class="select-label" for="taskPriority">Priority</label>
+              <select id="taskPriority">
+                <option value="Medium">🟡 Medium</option>
+                <option value="High">🔴 High</option>
+                <option value="Low">🟢 Low</option>
+              </select>
+            </div>
+          </form>
+
+          <div class="task-toolbar">
+            <div class="filter-tabs" aria-label="Filter tasks">
+              <button class="filter-btn active" type="button" data-filter="all">All</button>
+              <button class="filter-btn" type="button" data-filter="pending">⏳ Pending</button>
+              <button class="filter-btn" type="button" data-filter="completed">✅ Done</button>
+            </div>
+            <span class="sort-label">YOUR CHECKLIST ☑️</span>
+          </div>
+
+          <div id="taskList" class="task-list" aria-live="polite">
+            <div class="empty-state">
+              <div class="empty-illustration">🪄</div>
+              <h3>Your fresh start begins here!</h3>
+              <p>Add your first task and watch your progress grow.</p>
+            </div>
+          </div>
+        </div>
+
+        <aside class="right-column">
+
+          <section class="progress-panel" id="progress">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">LOOK HOW FAR YOU'VE COME</p>
+                <h2>My Progress 🌈</h2>
+              </div>
+            </div>
+
+            <div class="progress-circle" id="progressCircle" role="img" aria-label="0 percent of tasks completed">
+              <div class="progress-circle-inner">
+                <span class="progress-emoji">🏆</span>
+                <strong><span id="progressPercent">0</span>%</strong>
+                <span>completed</span>
+              </div>
+            </div>
+
+            <p class="progress-message" id="progressMessage">Your journey starts with one task!</p>
+
+            <div class="progress-track">
+              <div class="progress-fill" id="progressBar"></div>
+            </div>
+          </section>
+
+          <section class="tips-panel">
+            <div class="tips-heading">
+              <span class="tips-icon">💡</span>
+              <h2>Study tip of the day</h2>
+            </div>
+            <p>Try the <strong>Pomodoro technique</strong>: focus for 25 minutes, then take a 5-minute break.</p>
+            <div class="tip-footer">YOUR DAILY DOSE OF FOCUS ✨</div>
+          </section>
+
+          <section class="quote-panel">
+            <span>💜</span>
+            <blockquote>"You don't have to be perfect. You just have to keep going."</blockquote>
+            <p>— A reminder for you</p>
+          </section>
+
+        </aside>
+      </section>
+
+      <footer class="footer">
+        Made with 💜 for your goals <span>•</span> One task at a time
+      </footer>
+
+    </main>
+  </div>
 </body>
 </html>
