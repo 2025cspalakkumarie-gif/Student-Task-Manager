@@ -8,31 +8,413 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <main class="container">
-        <h1>Student Task Manager</h1>
-        <p class="subtitle">Organize your college tasks easily!</p>
 
-        <form id="taskForm">
-            <input
-                type="text"
-                id="taskInput"
-                placeholder="Enter your task..."
-                aria-label="Task name"
-                required
-            >
-            <button type="submit">Add Task</button>
-        </form>
+<div class="app-container">
 
-        <p id="message" role="status"></p>
-
-        <div class="summary">
-            <span>Total: <strong id="total">0</strong></span>
-            <span>Completed: <strong id="completed">0</strong></span>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">
+            <span class="logo-icon">✦</span>
+            <h2>Student<span>Task</span></h2>
         </div>
 
-        <ul id="taskList"></ul>
-    </main>
+        <p class="menu-heading">WORKSPACE</p>
 
-    <script src="script.js"></script>
+        <nav class="sidebar-nav">
+            <button class="nav-item active" data-page="dashboard">🏠 Dashboard</button>
+            <button class="nav-item" data-page="tasks">📋 My Tasks</button>
+            <button class="nav-item" data-page="calendar">📅 Calendar</button>
+            <button class="nav-item" data-page="categories">🗂️ Categories</button>
+
+            <p class="menu-heading">PRODUCTIVITY</p>
+
+            <button class="nav-item" data-page="focus">⏱️ Focus Mode</button>
+            <button class="nav-item" data-page="goals">🎯 Goals & Habits</button>
+            <button class="nav-item" data-page="analytics">📊 Analytics</button>
+            <button class="nav-item" data-page="notes">📝 Notes</button>
+
+            <p class="menu-heading">PREFERENCES</p>
+
+            <button class="nav-item" data-page="settings">⚙️ Settings</button>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="profile-avatar">S</div>
+            <div>
+                <strong>Student</strong>
+                <small>My Workspace</small>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content">
+
+        <header class="topbar">
+            <div>
+                <h1 id="page-title">Dashboard</h1>
+                <p id="page-subtitle">Welcome back! Here's your productivity overview.</p>
+            </div>
+
+            <div class="topbar-actions">
+                <button id="theme-toggle" class="icon-button" title="Toggle theme">🌙</button>
+                <div class="topbar-avatar">S</div>
+            </div>
+        </header>
+
+        <!-- Dashboard -->
+        <section class="page-section active" id="dashboard">
+
+            <div class="welcome-banner">
+                <div>
+                    <span class="eyebrow">YOUR PERSONAL WORKSPACE</span>
+                    <h2>Plan your day. Achieve your goals.</h2>
+                    <p>Stay organized, focused and ahead of your deadlines.</p>
+                    <button class="primary-button" data-go="tasks">+ Create a Task</button>
+                </div>
+                <div class="welcome-art">🚀</div>
+            </div>
+
+            <div class="section-heading">
+                <div>
+                    <h2>Overview</h2>
+                    <p>Track your progress at a glance.</p>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <article class="stat-card">
+                    <span class="stat-icon purple">📋</span>
+                    <p>Total Tasks</p>
+                    <h2 id="total-tasks">0</h2>
+                    <small>All your tasks</small>
+                </article>
+
+                <article class="stat-card">
+                    <span class="stat-icon green">✅</span>
+                    <p>Completed</p>
+                    <h2 id="completed-tasks">0</h2>
+                    <small>Tasks finished</small>
+                </article>
+
+                <article class="stat-card">
+                    <span class="stat-icon orange">⏳</span>
+                    <p>Pending</p>
+                    <h2 id="pending-tasks">0</h2>
+                    <small>Tasks remaining</small>
+                </article>
+
+                <article class="stat-card">
+                    <span class="stat-icon red">⚠️</span>
+                    <p>Overdue</p>
+                    <h2 id="overdue-tasks">0</h2>
+                    <small>Past due date</small>
+                </article>
+            </div>
+
+            <div class="dashboard-grid">
+                <article class="content-card">
+                    <div class="card-heading">
+                        <div>
+                            <h3>Recent Tasks</h3>
+                            <p>Your latest activities</p>
+                        </div>
+                        <button class="text-button" data-go="tasks">View all →</button>
+                    </div>
+                    <div id="dashboard-task-list" class="task-list">
+                        <div class="empty-state">No tasks yet. Create your first task!</div>
+                    </div>
+                </article>
+
+                <article class="content-card progress-card">
+                    <div class="card-heading">
+                        <div>
+                            <h3>Overall Progress</h3>
+                            <p>Your completion summary</p>
+                        </div>
+                    </div>
+                    <div class="progress-circle" id="progress-circle">
+                        <span id="progress-percent">0%</span>
+                    </div>
+                    <p class="progress-caption">Tasks completed</p>
+                    <div class="progress-details">
+                        <span>Completed</span>
+                        <strong id="progress-completed">0</strong>
+                    </div>
+                    <div class="progress-details">
+                        <span>Remaining</span>
+                        <strong id="progress-remaining">0</strong>
+                    </div>
+                </article>
+            </div>
+
+            <article class="content-card">
+                <div class="card-heading">
+                    <div>
+                        <h3>Upcoming Deadlines</h3>
+                        <p>Keep an eye on important dates.</p>
+                    </div>
+                </div>
+                <div id="upcoming-deadlines" class="task-list">
+                    <div class="empty-state">No upcoming deadlines.</div>
+                </div>
+            </article>
+        </section>
+
+        <!-- My Tasks -->
+        <section class="page-section" id="tasks">
+            <div class="section-heading">
+                <div>
+                    <h2>Manage Your Tasks</h2>
+                    <p>Create, organize and track your academic work.</p>
+                </div>
+            </div>
+
+            <article class="content-card">
+                <h3>Add New Task</h3>
+                <form id="task-form">
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label for="task-title">Task Title</label>
+                            <input type="text" id="task-title" placeholder="Enter your task..." required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="task-category">Category</label>
+                            <select id="task-category">
+                                <option value="Study">Study</option>
+                                <option value="Assignment">Assignment</option>
+                                <option value="Project">Project</option>
+                                <option value="Personal">Personal</option>
+                                <option value="Exam">Exam</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="task-priority">Priority</label>
+                            <select id="task-priority">
+                                <option value="Low">Low</option>
+                                <option value="Medium" selected>Medium</option>
+                                <option value="High">High</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="task-date">Due Date</label>
+                            <input type="date" id="task-date">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="task-description">Description</label>
+                            <input type="text" id="task-description" placeholder="Optional details">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="primary-button">+ Add Task</button>
+                </form>
+            </article>
+
+            <article class="content-card">
+                <div class="card-heading">
+                    <div>
+                        <h3>All Tasks</h3>
+                        <p>Search and organize your work.</p>
+                    </div>
+                </div>
+
+                <div class="task-toolbar">
+                    <input type="search" id="task-search" placeholder="🔍 Search tasks...">
+
+                    <select id="task-filter">
+                        <option value="all">All Tasks</option>
+                        <option value="pending">Pending</option>
+                        <option value="completed">Completed</option>
+                        <option value="overdue">Overdue</option>
+                    </select>
+
+                    <select id="task-sort">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="priority">Priority</option>
+                        <option value="date">Due Date</option>
+                    </select>
+                </div>
+
+                <div id="task-list" class="task-list">
+                    <div class="empty-state">Your tasks will appear here.</div>
+                </div>
+            </article>
+        </section>
+
+        <!-- Calendar -->
+        <section class="page-section" id="calendar">
+            <div class="section-heading">
+                <div>
+                    <h2>Calendar</h2>
+                    <p>View your tasks and deadlines by date.</p>
+                </div>
+            </div>
+            <article class="content-card">
+                <div class="calendar-toolbar">
+                    <button id="calendar-prev" class="secondary-button">←</button>
+                    <h3 id="calendar-month">Month Year</h3>
+                    <button id="calendar-next" class="secondary-button">→</button>
+                </div>
+                <div id="calendar-grid" class="calendar-grid"></div>
+            </article>
+            <article class="content-card">
+                <h3>Selected Date Tasks</h3>
+                <div id="calendar-day-tasks" class="task-list">
+                    <div class="empty-state">Select a date to view tasks.</div>
+                </div>
+            </article>
+        </section>
+
+        <!-- Categories -->
+        <section class="page-section" id="categories">
+            <div class="section-heading">
+                <div>
+                    <h2>Task Categories</h2>
+                    <p>Organize your work by subject and activity.</p>
+                </div>
+            </div>
+            <div id="category-grid" class="category-grid"></div>
+        </section>
+
+        <!-- Focus Mode -->
+        <section class="page-section" id="focus">
+            <div class="section-heading">
+                <div>
+                    <h2>Focus Mode</h2>
+                    <p>Concentrate on one task at a time.</p>
+                </div>
+            </div>
+            <article class="content-card focus-card">
+                <span class="eyebrow">POMODORO TIMER</span>
+                <h2 id="focus-mode-label">Focus Session</h2>
+                <div id="focus-timer" class="focus-timer">25:00</div>
+                <div class="focus-controls">
+                    <button id="focus-start" class="primary-button">Start</button>
+                    <button id="focus-pause" class="secondary-button">Pause</button>
+                    <button id="focus-reset" class="secondary-button">Reset</button>
+                </div>
+                <div class="focus-modes">
+                    <button class="mode-button active" data-minutes="25" data-mode="Focus Session">Focus 25 min</button>
+                    <button class="mode-button" data-minutes="5" data-mode="Short Break">Short Break 5 min</button>
+                    <button class="mode-button" data-minutes="15" data-mode="Long Break">Long Break 15 min</button>
+                </div>
+                <p id="focus-session-count">Completed sessions: 0</p>
+            </article>
+        </section>
+
+        <!-- Goals and Habits -->
+        <section class="page-section" id="goals">
+            <div class="section-heading">
+                <div>
+                    <h2>Goals & Habits</h2>
+                    <p>Build consistent study habits and reach your goals.</p>
+                </div>
+            </div>
+            <article class="content-card">
+                <h3>Create a Goal</h3>
+                <form id="goal-form">
+                    <div class="form-group">
+                        <label for="goal-title">Goal Name</label>
+                        <input type="text" id="goal-title" placeholder="Example: Study Java for 1 hour" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="goal-target">Target (days)</label>
+                        <input type="number" id="goal-target" min="1" value="7" required>
+                    </div>
+                    <button class="primary-button" type="submit">+ Add Goal</button>
+                </form>
+            </article>
+            <div id="goal-list" class="goal-grid"></div>
+        </section>
+
+        <!-- Analytics -->
+        <section class="page-section" id="analytics">
+            <div class="section-heading">
+                <div>
+                    <h2>Analytics & Reports</h2>
+                    <p>Understand your task completion and productivity.</p>
+                </div>
+                <button id="export-report" class="secondary-button">Export Report</button>
+            </div>
+            <div class="stats-grid">
+                <article class="stat-card">
+                    <p>Completion Rate</p>
+                    <h2 id="analytics-completion">0%</h2>
+                </article>
+                <article class="stat-card">
+                    <p>Total Tasks</p>
+                    <h2 id="analytics-total">0</h2>
+                </article>
+                <article class="stat-card">
+                    <p>Focus Sessions</p>
+                    <h2 id="analytics-sessions">0</h2>
+                </article>
+            </div>
+            <article class="content-card">
+                <h3>Task Summary</h3>
+                <div id="analytics-summary" class="analytics-summary"></div>
+            </article>
+        </section>
+
+        <!-- Notes -->
+        <section class="page-section" id="notes">
+            <div class="section-heading">
+                <div>
+                    <h2>Notes & Resources</h2>
+                    <p>Keep your important study notes in one place.</p>
+                </div>
+            </div>
+            <article class="content-card">
+                <h3>Create a Note</h3>
+                <form id="note-form">
+                    <div class="form-group">
+                        <label for="note-title">Note Title</label>
+                        <input type="text" id="note-title" placeholder="Enter note title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="note-content">Note Content</label>
+                        <textarea id="note-content" rows="5" placeholder="Write your notes here..." required></textarea>
+                    </div>
+                    <button type="submit" class="primary-button">Save Note</button>
+                </form>
+            </article>
+            <div id="notes-list" class="notes-grid"></div>
+        </section>
+
+        <!-- Settings -->
+        <section class="page-section" id="settings">
+            <div class="section-heading">
+                <div>
+                    <h2>Settings</h2>
+                    <p>Manage your application preferences and data.</p>
+                </div>
+            </div>
+            <article class="content-card">
+                <h3>Appearance</h3>
+                <p>Switch between light and dark themes.</p>
+                <button id="settings-theme-toggle" class="secondary-button">Toggle Theme</button>
+            </article>
+            <article class="content-card">
+                <h3>Data Management</h3>
+                <p>Download a backup of your application data or restore it later.</p>
+                <button id="backup-data" class="secondary-button">Download Backup</button>
+                <label class="secondary-button file-label" for="restore-data">Restore Backup</label>
+                <input type="file" id="restore-data" accept=".json" hidden>
+            </article>
+        </section>
+
+        <footer class="app-footer">
+            <p>Student Task Manager · Organize better. Achieve more.</p>
+        </footer>
+
+    </main>
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
