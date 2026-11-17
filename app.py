@@ -5,20 +5,28 @@ import sqlite3
 app = Flask(__name__)
 CORS(app)
 
+DATABASE = "tasks.db"
 
-def get_db_connection():
-    conn = sqlite3.connect("tasks.db")
+
+# ---------------- DATABASE ----------------
+
+def get_db():
+    conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
 
 
 def init_db():
-    conn = get_db_connection()
+    conn = get_db()
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
+            title TEXT NOT NULL,
+            category TEXT,
+            priority TEXT,
+            dueDate TEXT,
+            description TEXT,
             completed INTEGER DEFAULT 0
         )
     """)
@@ -27,48 +35,75 @@ def init_db():
     conn.close()
 
 
+# ---------------- HOME ----------------
+
 @app.route("/")
 def home():
     return "Student Task Manager Backend is Running!"
 
 
-@app.route("/tasks", methods=["GET"]) #Read the tasks
+# ---------------- GET ALL TASKS ----------------
+
+@app.route("/tasks", methods=["GET"])
 def get_tasks():
 
-    conn = get_db_connection()
+    conn = get_db()
 
     tasks = conn.execute(
-        "SELECT * FROM tasks"
+        "SELECT * FROM tasks ORDER BY id DESC"
     ).fetchall()
 
     conn.close()
 
-    return jsonify([
-        {
+    result = []
+
+    for task in tasks:
+        result.append({
             "id": task["id"],
-            "name": task["name"],
+            "title": task["title"],
+            "category": task["category"],
+            "priority": task["priority"],
+            "dueDate": task["dueDate"],
+            "description": task["description"],
             "completed": bool(task["completed"])
-        }
-        for task in tasks
-    ])
+        })
+
+    return jsonify(result)
 
 
-@app.route("/tasks", methods=["POST"]) #Create the tasks
+# ---------------- ADD TASK ----------------
+
+@app.route("/tasks", methods=["POST"])
 def add_task():
 
     data = request.get_json()
 
-    name = data.get("name")
+    title = data.get("title")
+    category = data.get("category")
+    priority = data.get("priority")
+    dueDate = data.get("dueDate")
+    description = data.get("description")
+    completed = data.get("completed", False)
 
-    if not name:
-        return jsonify({"error": "Task name is required"}), 400
+    if not title:
+        return jsonify({
+            "error": "Title is required"
+        }), 400
 
-    conn = get_db_connection()
+    conn = get_db()
 
-    cursor = conn.execute(
-        "INSERT INTO tasks (name, completed) VALUES (?, ?)",
-        (name, 0)
-    )
+    cursor = conn.execute("""
+        INSERT INTO tasks
+        (title, category, priority, dueDate, description, completed)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        title,
+        category,
+        priority,
+        dueDate,
+        description,
+        int(completed)
+    ))
 
     conn.commit()
 
@@ -77,70 +112,95 @@ def add_task():
     conn.close()
 
     return jsonify({
-        "id": task_id,
-        "name": name,
-        "completed": False
+        "message": "Task added successfully",
+        "id": task_id
     }), 201
 
- #Updates the tasks
+
+# ---------------- UPDATE TASK ----------------
+
 @app.route("/tasks/<int:task_id>", methods=["PUT"])
 def update_task(task_id):
 
     data = request.get_json()
 
-    name = data.get("name")
-    completed = data.get("completed")
+    conn = get_db()
 
-    if name is None and completed is None:
-        return jsonify({"error": "No update data provided"}), 400
-
-    conn = get_db_connection()
-
-    task = conn.execute(
-        "SELECT * FROM tasks WHERE id = ?", (task_id,)
+    existing = conn.execute(
+        "SELECT * FROM tasks WHERE id = ?",
+        (task_id,)
     ).fetchone()
 
-    if task is None:
+    if not existing:
         conn.close()
-        return jsonify({"error": "Task not found"}), 404
 
-    if name is not None:
-        conn.execute(
-            "UPDATE tasks SET name = ? WHERE id = ?",
-            (name, task_id)
-        )
+        return jsonify({
+            "error": "Task not found"
+        }), 404
 
-    if completed is not None:
-        conn.execute(
-            "UPDATE tasks SET completed = ? WHERE id = ?",
-            (int(bool(completed)), task_id)
-        )
+    title = data.get("title", existing["title"])
+    category = data.get("category", existing["category"])
+    priority = data.get("priority", existing["priority"])
+    dueDate = data.get("dueDate", existing["dueDate"])
+    description = data.get("description", existing["description"])
+    completed = data.get("completed", bool(existing["completed"]))
+
+    conn.execute("""
+        UPDATE tasks
+        SET title = ?,
+            category = ?,
+            priority = ?,
+            dueDate = ?,
+            description = ?,
+            completed = ?
+        WHERE id = ?
+    """, (
+        title,
+        category,
+        priority,
+        dueDate,
+        description,
+        int(completed),
+        task_id
+    ))
 
     conn.commit()
     conn.close()
 
     return jsonify({
         "message": "Task updated successfully"
-    }), 200
+    })
 
 
-@app.route("/tasks/<int:task_id>", methods=["DELETE"])#Deletes the tasks
+# ---------------- DELETE TASK ----------------
+
+@app.route("/tasks/<int:task_id>", methods=["DELETE"])
 def delete_task(task_id):
 
-    conn = get_db_connection()
+    conn = get_db()
 
-    conn.execute(
+    cursor = conn.execute(
         "DELETE FROM tasks WHERE id = ?",
         (task_id,)
     )
 
     conn.commit()
+
+    if cursor.rowcount == 0:
+        conn.close()
+
+        return jsonify({
+            "error": "Task not found"
+        }), 404
+
     conn.close()
 
     return jsonify({
         "message": "Task deleted successfully"
     })
 
+
+# ---------------- RUN SERVER ----------------
 
 if __name__ == "__main__":
     init_db()
