@@ -5,6 +5,7 @@
 // ==========================================
 
 const $ = (id) => document.getElementById(id);
+const API_URL = "http://127.0.0.1:5000";
 
 const STORAGE = {
     tasks: "stm_tasks",
