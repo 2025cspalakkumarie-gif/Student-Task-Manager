@@ -413,7 +413,13 @@
                     </div>
                     <div class="form-group">
                         <label for="note-content">Note Content</label>
-                        <textarea id="note-content" rows="5" placeholder="Write your notes here..." required></textarea>
+                        <textarea id="note-content" rows="5" placeholder="Write your notes here..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="note-files">Attach files (optional)</label>
+                        <input type="file" id="note-files" multiple>
+                        <small class="note-upload-help">You can attach multiple files. Each file is limited to 2 MB.</small>
+                        <div id="note-file-selection" class="note-file-selection" aria-live="polite"></div>
                     </div>
                     <button type="submit" class="primary-button">Save Note</button>
                 </form>
@@ -470,9 +476,11 @@
         </div>
 
         <form id="stm-chatbot-form" class="stm-chatbot-input-area">
-            <input id="stm-chatbot-input" type="text" autocomplete="off" placeholder="Type a message..." aria-label="Message Study Assistant">
+            <input id="stm-chatbot-input" type="text" autocomplete="off" placeholder="Type or dictate a message..." aria-label="Message Study Assistant">
+            <button id="stm-chatbot-mic" type="button" aria-label="Start voice dictation" title="Voice dictation">🎙️</button>
             <button type="submit" aria-label="Send message">➤</button>
         </form>
+        <p id="stm-chatbot-voice-status" class="stm-chatbot-voice-status" aria-live="polite"></p>
     </section>
 
     </main>
