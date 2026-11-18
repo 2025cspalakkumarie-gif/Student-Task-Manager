@@ -11,6 +11,8 @@
     const messages = document.getElementById("stm-chatbot-messages");
     const form = document.getElementById("stm-chatbot-form");
     const input = document.getElementById("stm-chatbot-input");
+    const micButton = document.getElementById("stm-chatbot-mic");
+    const voiceStatus = document.getElementById("stm-chatbot-voice-status");
 
     if (!toggle || !panel || !close || !messages || !form || !input) return;
 
@@ -223,6 +225,81 @@
     document.querySelectorAll("[data-chat-prompt]").forEach(button => {
         button.addEventListener("click", () => sendMessage(button.dataset.chatPrompt || ""));
     });
+
+    // Browser-based speech-to-text dictation.
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let isListening = false;
+
+    function setVoiceStatus(message) {
+        if (voiceStatus) voiceStatus.textContent = message;
+    }
+
+    if (micButton) {
+        if (!SpeechRecognition) {
+            micButton.disabled = true;
+            micButton.title = "Voice dictation is not supported in this browser";
+            setVoiceStatus("Voice dictation is unsupported here. Try Chrome or Edge on localhost/HTTPS.");
+        } else {
+            recognition = new SpeechRecognition();
+            recognition.lang = "en-IN";
+            recognition.continuous = false;
+            recognition.interimResults = true;
+
+            recognition.addEventListener("start", () => {
+                isListening = true;
+                micButton.classList.add("listening");
+                micButton.setAttribute("aria-label", "Stop voice dictation");
+                setVoiceStatus("Listening… speak now.");
+            });
+
+            recognition.addEventListener("result", event => {
+                let finalText = "";
+                let interimText = "";
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) finalText += transcript;
+                    else interimText += transcript;
+                }
+                if (finalText) {
+                    input.value = `${input.value}${input.value ? " " : ""}${finalText}`.trim();
+                }
+                if (interimText) setVoiceStatus(`Hearing: ${interimText}`);
+                else if (finalText) setVoiceStatus("Speech captured. Edit it or send it.");
+            });
+
+            recognition.addEventListener("error", event => {
+                const errors = {
+                    "not-allowed": "Microphone permission denied. Allow microphone access in browser settings.",
+                    "no-speech": "No speech detected. Tap the microphone and try again.",
+                    "audio-capture": "No microphone was found."
+                };
+                setVoiceStatus(errors[event.error] || `Voice input error: ${event.error}`);
+            });
+
+            recognition.addEventListener("end", () => {
+                isListening = false;
+                micButton.classList.remove("listening");
+                micButton.setAttribute("aria-label", "Start voice dictation");
+                if (voiceStatus.textContent === "Listening… speak now.") {
+                    setVoiceStatus("Dictation ended. You can edit the text or send it.");
+                }
+                input.focus();
+            });
+
+            micButton.addEventListener("click", () => {
+                if (isListening) {
+                    recognition.stop();
+                } else {
+                    try {
+                        recognition.start();
+                    } catch (error) {
+                        setVoiceStatus("Voice dictation is starting. Please wait.");
+                    }
+                }
+            });
+        }
+    }
 
     addMessage("Hey! 👋 I'm your Study Assistant. Ask me about your tasks, progress, goals, or Focus Mode.", "bot", true);
 })();
