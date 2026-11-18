@@ -1,28 +1,21 @@
+STUDENT TASK MANAGER - REQUESTED ADDITIONS
 
-# Student Task Manager
+Replace ONLY these four existing project files with the updated copies in this folder:
+index.html, script.js, chatbot.js, chatbot.css.
 
-## About the Project
-Student Task Manager is a simple website that helps students
-organize their college tasks.
+Keep app.py, style.css, and all other project files unchanged.
 
-## Features
-- Add new tasks
-- Mark tasks as completed
-- Delete tasks
-- Save tasks in browser Local Storage
-- View total and completed task counts
+NOTES:
+- A note may contain text, multiple files, or files without text.
+- Each attachment is limited to 2 MB.
+- Attachments are saved in the existing browser localStorage notes data and can be
+  downloaded by clicking the filename on the note card.
+- Files are stored in this browser profile; this implementation does not upload
+  attachments to the Flask backend.
 
-## Technologies Used
-- HTML
-- CSS
-- JavaScript
-- Git and GitHub
-
-## How to Run
-1. Download or clone the repository.
-2. Open index.html in a web browser.
-3. Start adding your tasks.
-
-## Team Project
-Developed as part of the Collaborative Development
-and DevOps (CDD) course.
+CHATBOT VOICE:
+- Click the microphone, speak, then edit or send the recognized text.
+- Uses browser SpeechRecognition / webkitSpeechRecognition.
+- Microphone permission is required; use localhost or HTTPS. Browser support varies
+  (Chrome/Edge are recommended).
+- This is voice dictation (speech-to-text), not spoken chatbot responses.
