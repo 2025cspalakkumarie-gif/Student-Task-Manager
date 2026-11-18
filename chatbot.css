@@ -207,3 +207,50 @@
         height: min(560px, calc(100vh - 112px));
     }
 }
+
+
+/* Requested additions: note attachments */
+.note-upload-help {
+    display: block;
+    margin-top: 6px;
+    color: var(--muted, #85859b);
+    font-size: 11px;
+}
+.note-file-selection {
+    margin-top: 7px;
+    color: var(--muted, #85859b);
+    font-size: 11px;
+    overflow-wrap: anywhere;
+}
+.note-attachment {
+    margin-top: 8px;
+    font-size: 12px;
+}
+.note-attachment a {
+    color: var(--primary, #7157e8);
+    text-decoration: underline;
+}
+
+/* Requested additions: chatbot voice dictation */
+.stm-chatbot-input-area #stm-chatbot-mic {
+    flex: 0 0 42px;
+    width: 42px;
+}
+.stm-chatbot-input-area #stm-chatbot-mic.listening {
+    background: #d93650;
+    animation: stm-mic-pulse 1s infinite;
+}
+.stm-chatbot-input-area #stm-chatbot-mic:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+.stm-chatbot-voice-status {
+    min-height: 18px;
+    padding: 0 14px 8px;
+    background: var(--surface, #fff);
+    color: var(--muted, #85859b);
+    font-size: 10px;
+}
+@keyframes stm-mic-pulse {
+    50% { opacity: 0.55; }
+}
