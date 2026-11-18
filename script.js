@@ -7,6 +7,33 @@
 const $ = (id) => document.getElementById(id);
 const API_URL = "http://127.0.0.1:5000";
 
+async function fetchTasksFromBackend() {
+    const response = await fetch(`${API_URL}/tasks`);
+
+    if (!response.ok) {
+        throw new Error("Unable to fetch tasks");
+    }
+
+    return await response.json();
+}
+async function loadBackendTasks() {
+    try {
+        tasks = await fetchTasksFromBackend();
+
+        tasks = tasks.map(task => ({
+            ...task,
+            createdAt: task.createdAt || ""
+        }));
+
+        saveData();
+        renderAll();
+
+    } catch (error) {
+        console.error("Backend connection error:", error);
+        alert("Unable to connect to backend. Make sure Flask is running.");
+    }
+}
+
 const STORAGE = {
     tasks: "stm_tasks",
     goals: "stm_goals",
@@ -81,7 +108,7 @@ function isOverdue(task) {
 // ==========================================
 // LOCAL LOGIN (front-end demonstration only)
 // ==========================================
-
+const LOGIN_ACCOUNTS_KEY = "stm_local_accounts";
 const LOGIN_STORAGE_KEY = "stm_local_account";
 const LOGIN_SESSION_KEY = "stm_logged_in";
 
@@ -110,49 +137,73 @@ function showLogin() {
     $("login-screen").style.display = "grid";
 }
 
-$("login-form").addEventListener("submit", async event => {
+
+    // MULTI-ACCOUNT LOGIN
+
+
+$("login-form").addEventListener("submit", async event =>  {
     event.preventDefault();
+
     const email = $("login-email").value.trim().toLowerCase();
     const password = $("login-password").value;
     const message = $("login-message");
+
     message.textContent = "";
 
-    if (password.length < 6) {
-        message.textContent = "Password must contain at least 6 characters.";
+    if (!email || password.length < 6) {
+        message.textContent = "Enter a valid email and password (minimum 6 characters).";
         return;
     }
 
     try {
-        const savedAccount = loadData(LOGIN_STORAGE_KEY, null);
+        let accounts = loadData(LOGIN_ACCOUNTS_KEY, []);
+        const oldAccount = loadData(LOGIN_STORAGE_KEY, null);
+
+        if (oldAccount && !accounts.some(a => a.email === oldAccount.email)) {
+            accounts.push(oldAccount);
+        }
+
         const passwordHash = await hashLoginPassword(password);
 
-        if (!savedAccount) {
-            localStorage.setItem(LOGIN_STORAGE_KEY, JSON.stringify({ email, passwordHash }));
-            localStorage.setItem(LOGIN_SESSION_KEY, "true");
-            showApplication(email);
-            return;
+        const account = accounts.find(a => a.email === email);
+
+        if (account) {
+            if (account.passwordHash !== passwordHash) {
+                message.textContent = "Incorrect email or password.";
+                return;
+            }
+        } else {
+            accounts.push({ email, passwordHash });
         }
 
-        if (savedAccount.email === email && savedAccount.passwordHash === passwordHash) {
-            localStorage.setItem(LOGIN_SESSION_KEY, "true");
-            showApplication(email);
-        } else {
-            message.textContent = "Incorrect email or password.";
-        }
+        localStorage.setItem(LOGIN_ACCOUNTS_KEY, JSON.stringify(accounts));
+        localStorage.setItem(LOGIN_SESSION_KEY, "true");
+        localStorage.setItem("stm_session_email", email);
+
+        showApplication(email);
+
     } catch (error) {
+        console.error(error);
         message.textContent = error.message || "Unable to sign in.";
     }
 });
 
 $("logout-button").addEventListener("click", () => {
     localStorage.removeItem(LOGIN_SESSION_KEY);
+    localStorage.removeItem("stm_session_email");
     showLogin();
     $("login-password").value = "";
 });
 
-const existingAccount = loadData(LOGIN_STORAGE_KEY, null);
-if (localStorage.getItem(LOGIN_SESSION_KEY) === "true" && existingAccount) {
-    showApplication(existingAccount.email);
+// RESTORE SESSION
+
+const currentSessionEmail = localStorage.getItem("stm_session_email");
+
+if (
+    localStorage.getItem(LOGIN_SESSION_KEY) === "true" &&
+    currentSessionEmail
+) {
+    showApplication(currentSessionEmail);
 } else {
     showLogin();
 }
@@ -210,8 +261,7 @@ document.querySelectorAll("[data-go]").forEach(button => {
 // ==========================================
 // TASK MANAGEMENT
 // ==========================================
-
-$("task-form").addEventListener("submit", event => {
+$("task-form").addEventListener("submit", async event => {
     event.preventDefault();
 
     const title = $("task-title").value.trim();
@@ -219,59 +269,124 @@ $("task-form").addEventListener("submit", event => {
     if (!title) return;
 
     const task = {
-        id: createId(),
-        title,
+        title: title,
         category: $("task-category").value,
         priority: $("task-priority").value,
         dueDate: $("task-date").value,
         description: $("task-description").value.trim(),
-        completed: false,
-        createdAt: new Date().toISOString()
+        completed: false
     };
 
-    tasks.unshift(task);
-    saveData();
+    try {
+        const response = await fetch(`${API_URL}/tasks`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(task)
+        });
 
-    event.target.reset();
-    $("task-priority").value = "Medium";
+        if (!response.ok) {
+            throw new Error("Failed to add task");
+        }
 
-    renderAll();
-    alert("Task added successfully!");
+        await loadBackendTasks();
+
+        event.target.reset();
+        $("task-priority").value = "Medium";
+
+        alert("Task added successfully!");
+
+    } catch (error) {
+        console.error(error);
+        alert("Unable to add task. Check backend connection.");
+    }
 });
 
-function addTaskAction(id, action) {
-    const task = tasks.find(item => item.id === id);
+
+    async function addTaskAction(id, action) {
+    const task = tasks.find(item => String(item.id) === String(id));
+
     if (!task) return;
 
-    if (action === "complete") {
-        task.completed = !task.completed;
-        task.completedAt = task.completed ? new Date().toISOString() : null;
-    }
+    try {
 
-    if (action === "delete") {
-        if (!confirm("Are you sure you want to delete this task?")) return;
-        tasks = tasks.filter(item => item.id !== id);
-    }
+        // COMPLETE TASK
+        if (action === "complete") {
+            const updatedTask = {
+                ...task,
+                completed: !task.completed
+            };
 
-    if (action === "edit") {
-        const title = prompt("Enter the updated task title:", task.title);
+            const response = await fetch(`${API_URL}/tasks/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(updatedTask)
+            });
 
-        if (title === null || !title.trim()) return;
-
-        task.title = title.trim();
-
-        const description = prompt(
-            "Enter the updated description:",
-            task.description || ""
-        );
-
-        if (description !== null) {
-            task.description = description.trim();
+            if (!response.ok) {
+                throw new Error("Failed to update task");
+            }
         }
-    }
 
-    saveData();
-    renderAll();
+        // DELETE TASK
+        if (action === "delete") {
+            if (!confirm("Are you sure you want to delete this task?")) {
+                return;
+            }
+
+            const response = await fetch(`${API_URL}/tasks/${id}`, {
+                method: "DELETE"
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to delete task");
+            }
+        }
+
+        // EDIT TASK
+        if (action === "edit") {
+            const title = prompt(
+                "Enter the updated task title:",
+                task.title
+            );
+
+            if (title === null || !title.trim()) return;
+
+            const description = prompt(
+                "Enter the updated description:",
+                task.description || ""
+            );
+
+            if (description === null) return;
+
+            const updatedTask = {
+                ...task,
+                title: title.trim(),
+                description: description.trim()
+            };
+
+            const response = await fetch(`${API_URL}/tasks/${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(updatedTask)
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to edit task");
+            }
+        }
+
+        await loadBackendTasks();
+
+    } catch (error) {
+        console.error("Task action failed:", error);
+        alert("Unable to update task. Check your backend connection.");
+    }
 }
 
 function taskHTML(task, compact = false) {
@@ -833,36 +948,85 @@ $("export-report").addEventListener("click", () => {
 // NOTES
 // ==========================================
 
-$("note-form").addEventListener("submit", event => {
+const NOTE_MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB per attachment
+
+function readNoteFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve({
+            name: file.name,
+            type: file.type || "application/octet-stream",
+            size: file.size,
+            dataUrl: reader.result
+        });
+        reader.onerror = () => reject(new Error(`Could not read ${file.name}`));
+        reader.readAsDataURL(file);
+    });
+}
+
+$("note-files").addEventListener("change", () => {
+    const files = Array.from($("note-files").files || []);
+    $("note-file-selection").textContent = files.length
+        ? files.map(file => `${file.name} (${(file.size / 1024).toFixed(1)} KB)`).join(" · ")
+        : "";
+});
+
+$("note-form").addEventListener("submit", async event => {
     event.preventDefault();
 
     const title = $("note-title").value.trim();
     const content = $("note-content").value.trim();
+    const selectedFiles = Array.from($("note-files").files || []);
 
-    if (!title || !content) return;
+    if (!title || (!content && !selectedFiles.length)) {
+        alert("Enter a title and either note content or attach at least one file.");
+        return;
+    }
 
-    notes.unshift({
-        id: createId(),
-        title,
-        content,
-        createdAt: new Date().toISOString()
-    });
+    const oversized = selectedFiles.find(file => file.size > NOTE_MAX_FILE_SIZE);
+    if (oversized) {
+        alert(`"${oversized.name}" is larger than 2 MB. Please choose a smaller file.`);
+        return;
+    }
 
-    saveData();
-    event.target.reset();
-    renderNotes();
+    try {
+        const attachments = await Promise.all(selectedFiles.map(readNoteFile));
+        notes.unshift({
+            id: createId(),
+            title,
+            content,
+            attachments,
+            createdAt: new Date().toISOString()
+        });
+        saveData();
+        event.target.reset();
+        $("note-file-selection").textContent = "";
+        renderNotes();
+    } catch (error) {
+        console.error("Note attachment error:", error);
+        alert("The selected file could not be saved. Please try again.");
+    }
 });
 
 function renderNotes() {
     $("notes-list").innerHTML = notes.length
-        ? notes.map(note => `
-            <article class="note-card">
-                <h3>📘 ${escapeHTML(note.title)}</h3>
-                <p>${escapeHTML(note.content)}</p>
-                <p style="margin-top:12px;">${new Date(note.createdAt).toLocaleDateString("en-IN")}</p>
-                <button class="secondary-button" onclick="deleteNote('${note.id}')">Delete Note</button>
-            </article>
-        `).join("")
+        ? notes.map(note => {
+            const attachmentHTML = (note.attachments || []).map(file => `
+                <p class="note-attachment">
+                    📎 <a href="${file.dataUrl}" download="${escapeHTML(file.name)}">${escapeHTML(file.name)}</a>
+                    <small>(${(file.size / 1024).toFixed(1)} KB)</small>
+                </p>
+            `).join("");
+            return `
+                <article class="note-card">
+                    <h3>📘 ${escapeHTML(note.title)}</h3>
+                    ${note.content ? `<p>${escapeHTML(note.content)}</p>` : ""}
+                    ${attachmentHTML}
+                    <p style="margin-top:12px;">${new Date(note.createdAt).toLocaleDateString("en-IN")}</p>
+                    <button class="secondary-button" onclick="deleteNote('${note.id}')">Delete Note</button>
+                </article>
+            `;
+        }).join("")
         : '<div class="empty-state">No notes saved yet.</div>';
 }
 
@@ -990,3 +1154,4 @@ function renderAll() {
 }
 
 renderAll();
+loadBackendTasks();
