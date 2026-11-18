@@ -78,6 +78,86 @@ function isOverdue(task) {
 }
 
 // ==========================================
+// LOCAL LOGIN (front-end demonstration only)
+// ==========================================
+
+const LOGIN_STORAGE_KEY = "stm_local_account";
+const LOGIN_SESSION_KEY = "stm_logged_in";
+
+async function hashLoginPassword(password) {
+    if (!window.crypto || !window.crypto.subtle) {
+        throw new Error("Please open this project through localhost or HTTPS to use the login securely.");
+    }
+    const bytes = new TextEncoder().encode(password);
+    const digest = await window.crypto.subtle.digest("SHA-256", bytes);
+    return Array.from(new Uint8Array(digest))
+        .map(byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function showApplication(email) {
+    $("login-screen").style.display = "none";
+    $("app-container").style.display = "flex";
+    const initial = (email || "S").trim().charAt(0).toUpperCase() || "S";
+    $("topbar-avatar").textContent = initial;
+    document.querySelector(".profile-avatar").textContent = initial;
+    document.querySelector(".sidebar-footer strong").textContent =
+        email ? email.split("@")[0] : "Student";
+}
+
+function showLogin() {
+    $("app-container").style.display = "none";
+    $("login-screen").style.display = "grid";
+}
+
+$("login-form").addEventListener("submit", async event => {
+    event.preventDefault();
+    const email = $("login-email").value.trim().toLowerCase();
+    const password = $("login-password").value;
+    const message = $("login-message");
+    message.textContent = "";
+
+    if (password.length < 6) {
+        message.textContent = "Password must contain at least 6 characters.";
+        return;
+    }
+
+    try {
+        const savedAccount = loadData(LOGIN_STORAGE_KEY, null);
+        const passwordHash = await hashLoginPassword(password);
+
+        if (!savedAccount) {
+            localStorage.setItem(LOGIN_STORAGE_KEY, JSON.stringify({ email, passwordHash }));
+            localStorage.setItem(LOGIN_SESSION_KEY, "true");
+            showApplication(email);
+            return;
+        }
+
+        if (savedAccount.email === email && savedAccount.passwordHash === passwordHash) {
+            localStorage.setItem(LOGIN_SESSION_KEY, "true");
+            showApplication(email);
+        } else {
+            message.textContent = "Incorrect email or password.";
+        }
+    } catch (error) {
+        message.textContent = error.message || "Unable to sign in.";
+    }
+});
+
+$("logout-button").addEventListener("click", () => {
+    localStorage.removeItem(LOGIN_SESSION_KEY);
+    showLogin();
+    $("login-password").value = "";
+});
+
+const existingAccount = loadData(LOGIN_STORAGE_KEY, null);
+if (localStorage.getItem(LOGIN_SESSION_KEY) === "true" && existingAccount) {
+    showApplication(existingAccount.email);
+} else {
+    showLogin();
+}
+
+
+// ==========================================
 // NAVIGATION
 // ==========================================
 
@@ -318,6 +398,61 @@ function renderDashboard() {
 // CALENDAR
 // ==========================================
 
+// Academic dates transcribed from the uploaded NIE Odd Semester 2026-27
+// Academic Calendar (Tentative), B.E. III, V & VII Semesters.
+const collegeEvents = [
+    { start: "2026-08-10", end: "2026-08-11", title: "Course Registration", type: "Academic event" },
+    { start: "2026-08-10", end: "2026-08-14", title: "Placement Activity for V semester students", type: "Academic event" },
+    { start: "2026-08-10", end: "2026-08-10", title: "Commencement of classes for III & VII semester students", type: "Academic event" },
+    { start: "2026-08-12", end: "2026-08-13", title: "Course registration with late fee", type: "Academic event" },
+    { start: "2026-08-17", end: "2026-08-17", title: "Commencement of classes for V semester students", type: "Academic event" },
+    { start: "2026-08-21", end: "2026-08-22", title: "Add / Dropping of Courses", type: "Academic event" },
+    { start: "2026-09-16", end: "2026-09-18", title: "Minor & Major Project – Review 1 – Evaluation 1 (as applicable)", type: "Academic event" },
+    { start: "2026-09-23", end: "2026-09-25", title: "Test 1", type: "Test" },
+    { start: "2026-10-01", end: "2026-10-01", title: "Announcement of marks of Test 1 and CIE Review", type: "Academic event" },
+    { start: "2026-10-12", end: "2026-10-14", title: "Review of Activity Points", type: "Academic event" },
+    { start: "2026-10-14", end: "2026-10-16", title: "Minor & Major Project – Review 2 – Evaluation 2 (as applicable)", type: "Academic event" },
+    { start: "2026-10-16", end: "2026-10-18", title: "Test 2", type: "Test" },
+    { start: "2026-11-19", end: "2026-11-19", title: "Withdrawal from a course", type: "Academic event" },
+    { start: "2026-11-19", end: "2026-11-25", title: "Test for Laboratory courses (as applicable)", type: "Test" },
+    { start: "2026-11-23", end: "2026-11-26", title: "Quiz", type: "Test" },
+    { start: "2026-11-26", end: "2026-11-26", title: "Announcement of marks of Test 2 and CIE Review", type: "Academic event" },
+    { start: "2026-11-28", end: "2026-11-28", title: "Announcement of CIE", type: "Academic event" },
+    { start: "2026-11-28", end: "2026-11-28", title: "Last working day", type: "Academic event" },
+    { start: "2026-11-30", end: "2026-12-05", title: "Semester End Test for laboratories", type: "Test" },
+    { start: "2026-12-07", end: "2026-12-07", title: "Commencement of Semester End Exam (SEE)", type: "Examination" },
+    { start: "2026-12-17", end: "2026-12-19", title: "Major Project Final Evaluation and Viva-Voce for VII semester; Course Registration for VIII semester", type: "Academic event" },
+    { start: "2026-12-21", end: "2026-12-21", title: "Commencement of VIII semester 2026-27 (Tentative)", type: "Academic event" },
+    { start: "2027-01-04", end: "2027-01-04", title: "Announcement of SEE Result and Paper seeing", type: "Academic event" },
+    { start: "2027-01-04", end: "2027-01-04", title: "Commencement of IV & VI semesters 2026-27 (Tentative); Course Registration for IV & VI semester", type: "Academic event" },
+    { start: "2026-08-10", end: "2026-08-14", title: "Proctorship 1", type: "Proctorship" },
+    { start: "2026-10-01", end: "2026-10-03", title: "Proctorship 2", type: "Proctorship" },
+    { start: "2026-11-26", end: "2026-11-28", title: "Proctorship 3", type: "Proctorship" }
+];
+
+const collegeHolidays = [
+    { date: "2026-08-15", title: "Independence Day" },
+    { date: "2026-08-26", title: "Id- Meelad" },
+    { date: "2026-09-14", title: "Ganesh Chaturthi" },
+    { date: "2026-10-02", title: "Gandhi Jayanti" },
+    { date: "2026-10-10", title: "Mahalaya Amavasya" },
+    { date: "2026-10-20", title: "Maha Navami / Ayudha Pooja" },
+    { date: "2026-10-21", title: "Vijaya Dashami" },
+    { date: "2026-10-25", title: "Valmiki Jayanthi" },
+    { date: "2026-11-01", title: "Rajyotsava Day" },
+    { date: "2026-11-08", title: "Naraka Chaturdashi" },
+    { date: "2026-11-10", title: "Balipadyami" },
+    { date: "2026-11-27", title: "Kanakadasa Jayanthi" }
+];
+
+function dateIsInRange(date, start, end) {
+    return date >= start && date <= end;
+}
+
+function eventsForDate(date) {
+    return collegeEvents.filter(event => dateIsInRange(date, event.start, event.end));
+}
+
 let calendarDate = new Date();
 let selectedDate = todayString();
 
@@ -326,33 +461,43 @@ function renderCalendar() {
     const month = calendarDate.getMonth();
 
     $("calendar-month").textContent = calendarDate.toLocaleDateString("en-IN", {
-        month: "long",
-        year: "numeric"
+        month: "long", year: "numeric"
     });
 
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-
     const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
     let html = weekdays.map(day =>
         `<div class="calendar-weekday">${day}</div>`
     ).join("");
 
-    for (let i = 0; i < firstDay; i++) {
-        html += "<div></div>";
-    }
+    for (let i = 0; i < firstDay; i++) html += "<div></div>";
 
     for (let day = 1; day <= daysInMonth; day++) {
         const date = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-
         const hasTask = tasks.some(task => task.dueDate === date);
+        const dayEvents = eventsForDate(date);
+        const holiday = collegeHolidays.some(item => item.date === date);
         const selected = selectedDate === date;
+        const classes = [
+            "calendar-day",
+            hasTask ? "has-task" : "",
+            dayEvents.length ? "has-college-event" : "",
+            holiday ? "has-holiday" : "",
+            selected ? "selected" : ""
+        ].filter(Boolean).join(" ");
+        const markers = [
+            hasTask ? '<i class="task-marker"></i>' : "",
+            dayEvents.length ? '<i class="college-marker"></i>' : "",
+            holiday ? '<i class="holiday-marker"></i>' : ""
+        ].join("");
 
         html += `
-            <button class="calendar-day ${hasTask ? "has-task" : ""} ${selected ? "selected" : ""}"
-                onclick="selectCalendarDate('${date}')">
+            <button class="${classes}" onclick="selectCalendarDate('${date}')"
+                aria-label="${date}${dayEvents.length ? ", college event" : ""}${holiday ? ", holiday" : ""}">
                 ${day}
+                <span class="day-event-markers">${markers}</span>
             </button>
         `;
     }
@@ -368,11 +513,36 @@ function selectCalendarDate(date) {
 
 function renderCalendarDayTasks() {
     const dayTasks = tasks.filter(task => task.dueDate === selectedDate);
+    const dayEvents = eventsForDate(selectedDate);
+    const holiday = collegeHolidays.filter(item => item.date === selectedDate);
+    let html = `<p style="font-size:12px;margin-bottom:12px;">${formatDate(selectedDate)}</p>`;
 
-    $("calendar-day-tasks").innerHTML = dayTasks.length
-        ? `<p style="font-size:12px;margin-bottom:12px;">${formatDate(selectedDate)}</p>` +
-          dayTasks.map(task => taskHTML(task)).join("")
-        : '<div class="empty-state">No tasks scheduled for this date.</div>';
+    html += holiday.map(item => `
+        <article class="calendar-event holiday-event">
+            <strong>${escapeHTML(item.title)}</strong>
+            <span class="event-type">College holiday</span>
+        </article>
+    `).join("");
+
+    html += dayEvents.map(event => `
+        <article class="calendar-event">
+            <strong>${escapeHTML(event.title)}</strong>
+            <p>${formatDate(event.start)}${event.end !== event.start ? " – " + formatDate(event.end) : ""}</p>
+            <span class="event-type">${escapeHTML(event.type)}</span>
+        </article>
+    `).join("");
+
+    html += dayTasks.length
+        ? `<h3 style="margin:16px 0 10px;">Your tasks</h3>${dayTasks.map(task => taskHTML(task)).join("")}`
+        : "";
+
+    if (!holiday.length && !dayEvents.length && !dayTasks.length) {
+        html += '<div class="empty-state">No college events, holidays or tasks scheduled for this date.</div>';
+    } else if (!dayTasks.length) {
+        html += '<p style="margin-top:12px;color:var(--muted);font-size:11px;">No personal tasks scheduled for this date.</p>';
+    }
+
+    $("calendar-day-tasks").innerHTML = html;
 }
 
 $("calendar-prev").addEventListener("click", () => {
@@ -419,6 +589,8 @@ function renderCategories() {
 // ==========================================
 
 let timerSeconds = 25 * 60;
+let selectedTimerDuration = 25;
+let selectedTimerMode = "Focus Session";
 let timerInterval = null;
 let focusSessions = sessions.length;
 
@@ -438,19 +610,59 @@ function stopTimer() {
     timerInterval = null;
 }
 
+function playTimerCompletionSound() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+
+        const audioContext = new AudioContext();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(1174.66, audioContext.currentTime + 0.12);
+
+        gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.25, audioContext.currentTime + 0.02);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.55);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.6);
+
+        oscillator.addEventListener("ended", () => audioContext.close());
+    } catch (error) {
+        console.warn("Unable to play timer completion sound.", error);
+    }
+}
+
 function selectTimerMode(minutes, mode) {
     stopTimer();
+    selectedTimerDuration = minutes;
+    selectedTimerMode = mode;
     timerSeconds = minutes * 60;
     $("focus-mode-label").textContent = mode;
+    $("custom-timer-minutes").value = minutes;
     updateTimerDisplay();
 
     document.querySelectorAll(".mode-button").forEach(button => {
         button.classList.toggle(
             "active",
-            Number(button.dataset.minutes) === minutes
+            Number(button.dataset.minutes) === minutes && button.dataset.mode === mode
         );
     });
 }
+
+$("apply-custom-timer").addEventListener("click", () => {
+    const minutes = Number($("custom-timer-minutes").value);
+    if (!Number.isInteger(minutes) || minutes < 1 || minutes > 600) {
+        alert("Please enter a duration between 1 and 600 minutes.");
+        return;
+    }
+    selectTimerMode(minutes, "Custom Focus Session");
+});
 
 document.querySelectorAll(".mode-button").forEach(button => {
     button.addEventListener("click", () => {
@@ -471,7 +683,8 @@ $("focus-start").addEventListener("click", () => {
         } else {
             stopTimer();
 
-            if ($("focus-mode-label").textContent === "Focus Session") {
+            if ($("focus-mode-label").textContent === "Focus Session" ||
+                $("focus-mode-label").textContent === "Custom Focus Session") {
                 focusSessions++;
                 sessions.push({
                     id: createId(),
@@ -481,6 +694,7 @@ $("focus-start").addEventListener("click", () => {
             }
 
             updateTimerDisplay();
+            playTimerCompletionSound();
             alert("Timer completed! Great work.");
         }
     }, 1000);
@@ -489,12 +703,7 @@ $("focus-start").addEventListener("click", () => {
 $("focus-pause").addEventListener("click", stopTimer);
 
 $("focus-reset").addEventListener("click", () => {
-    const activeButton = document.querySelector(".mode-button.active");
-
-    selectTimerMode(
-        Number(activeButton.dataset.minutes),
-        activeButton.dataset.mode
-    );
+    selectTimerMode(selectedTimerDuration, selectedTimerMode);
 });
 
 // ==========================================
