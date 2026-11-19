@@ -6,10 +6,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Task Manager</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="chatbot.css">
 </head>
 <body>
 
-<div class="app-container">
+<!-- Local sign-in screen (front-end demonstration only) -->
+<section id="login-screen" class="login-screen">
+    <form id="login-form" class="login-card">
+        <div class="login-logo">✦</div>
+        <p class="eyebrow">STUDENT TASK MANAGER</p>
+        <h1 id="login-heading">Welcome back</h1>
+        <p id="login-description">Sign in to continue to your workspace.</p>
+        <div class="form-group">
+            <label for="login-email">Email address</label>
+            <input id="login-email" type="email" autocomplete="username" placeholder="student@example.com" required>
+        </div>
+        <div class="form-group">
+            <label for="login-password">Password</label>
+            <input id="login-password" type="password" autocomplete="current-password" placeholder="Enter your password" minlength="6" required>
+        </div>
+        <p id="login-message" class="login-message" aria-live="polite"></p>
+        <button id="login-submit" type="submit" class="primary-button login-submit">Sign in / Create account</button>
+        <small class="login-note">First time here? Enter your email and password to create your local account. This demo login is stored in this browser only and is not server-secured.</small>
+    </form>
+</section>
+
+<div class="app-container" id="app-container">
 
     <!-- Sidebar -->
     <aside class="sidebar">
@@ -58,7 +80,8 @@
 
             <div class="topbar-actions">
                 <button id="theme-toggle" class="icon-button" title="Toggle theme">🌙</button>
-                <div class="topbar-avatar">S</div>
+                <button id="logout-button" class="secondary-button logout-button" type="button">Log out</button>
+                <div class="topbar-avatar" id="topbar-avatar">S</div>
             </div>
         </header>
 
@@ -251,7 +274,7 @@
             <div class="section-heading">
                 <div>
                     <h2>Calendar</h2>
-                    <p>View your tasks and deadlines by date.</p>
+                    <p>View your tasks, college academic events and holidays.</p>
                 </div>
             </div>
             <article class="content-card">
@@ -261,9 +284,14 @@
                     <button id="calendar-next" class="secondary-button">→</button>
                 </div>
                 <div id="calendar-grid" class="calendar-grid"></div>
+                <div class="calendar-legend">
+                    <span><i class="legend-dot task-dot"></i> Your tasks</span>
+                    <span><i class="legend-dot college-dot"></i> College event</span>
+                    <span><i class="legend-dot holiday-dot"></i> Holiday</span>
+                </div>
             </article>
             <article class="content-card">
-                <h3>Selected Date Tasks</h3>
+                <h3>Selected Date Schedule</h3>
                 <div id="calendar-day-tasks" class="task-list">
                     <div class="empty-state">Select a date to view tasks.</div>
                 </div>
@@ -302,6 +330,13 @@
                     <button class="mode-button active" data-minutes="25" data-mode="Focus Session">Focus 25 min</button>
                     <button class="mode-button" data-minutes="5" data-mode="Short Break">Short Break 5 min</button>
                     <button class="mode-button" data-minutes="15" data-mode="Long Break">Long Break 15 min</button>
+                </div>
+                <div class="custom-timer">
+                    <label for="custom-timer-minutes">Set your own duration (minutes)</label>
+                    <div class="custom-timer-controls">
+                        <input id="custom-timer-minutes" type="number" min="1" max="600" value="25">
+                        <button id="apply-custom-timer" class="secondary-button" type="button">Apply duration</button>
+                    </div>
                 </div>
                 <p id="focus-session-count">Completed sessions: 0</p>
             </article>
@@ -378,7 +413,13 @@
                     </div>
                     <div class="form-group">
                         <label for="note-content">Note Content</label>
-                        <textarea id="note-content" rows="5" placeholder="Write your notes here..." required></textarea>
+                        <textarea id="note-content" rows="5" placeholder="Write your notes here..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="note-files">Attach files (optional)</label>
+                        <input type="file" id="note-files" multiple>
+                        <small class="note-upload-help">You can attach multiple files. Each file is limited to 2 MB.</small>
+                        <div id="note-file-selection" class="note-file-selection" aria-live="polite"></div>
                     </div>
                     <button type="submit" class="primary-button">Save Note</button>
                 </form>
@@ -412,9 +453,40 @@
             <p>Student Task Manager · Organize better. Achieve more.</p>
         </footer>
 
+    <!-- Study Assistant Chatbot -->
+    <button id="stm-chatbot-toggle" class="stm-chatbot-toggle" type="button" aria-label="Open Study Assistant" aria-expanded="false">
+        💬
+    </button>
+
+    <section id="stm-chatbot" class="stm-chatbot" aria-label="Study Assistant" aria-hidden="true">
+        <div class="stm-chatbot-header">
+            <div>
+                <strong>Study Assistant</strong>
+                <span>Ask me about your tasks & productivity</span>
+            </div>
+            <button id="stm-chatbot-close" class="stm-chatbot-icon-button" type="button" aria-label="Close chat">×</button>
+        </div>
+
+        <div id="stm-chatbot-messages" class="stm-chatbot-messages" aria-live="polite"></div>
+
+        <div class="stm-chatbot-quick-actions">
+            <button type="button" data-chat-prompt="What tasks do I have?">My tasks</button>
+            <button type="button" data-chat-prompt="What should I focus on today?">Focus today</button>
+            <button type="button" data-chat-prompt="How many tasks are completed?">Progress</button>
+        </div>
+
+        <form id="stm-chatbot-form" class="stm-chatbot-input-area">
+            <input id="stm-chatbot-input" type="text" autocomplete="off" placeholder="Type or dictate a message..." aria-label="Message Study Assistant">
+            <button id="stm-chatbot-mic" type="button" aria-label="Start voice dictation" title="Voice dictation">🎙️</button>
+            <button type="submit" aria-label="Send message">➤</button>
+        </form>
+        <p id="stm-chatbot-voice-status" class="stm-chatbot-voice-status" aria-live="polite"></p>
+    </section>
+
     </main>
 </div>
 
 <script src="script.js"></script>
+<script src="chatbot.js"></script>
 </body>
 </html>
