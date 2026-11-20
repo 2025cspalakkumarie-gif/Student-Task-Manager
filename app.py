@@ -1,12 +1,13 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import sqlite3
 import os
 
-app = Flask(__name__)
+app = Flask(__name__,static_folder=None)
 CORS(app)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_DIR = os.path.dirname(BASE_DIR)
 DATABASE = os.path.join(BASE_DIR, "tasks.db")
 
 
@@ -41,7 +42,22 @@ def init_db():
 
 @app.route("/")
 def home():
-    return "Student Task Manager Backend is Running!"
+    return send_from_directory(PROJECT_DIR, "index.html")
+
+
+@app.route("/<path:filename>")
+def frontend_files(filename):
+    allowed_files = [
+        "style.css",
+        "chatbot.css",
+        "script.js",
+        "chatbot.js"
+    ]
+
+    if filename not in allowed_files:
+        return "Not found", 404
+
+    return send_from_directory(PROJECT_DIR, filename)
 
 
 # ---------------- GET ALL TASKS ----------------
@@ -206,4 +222,4 @@ def delete_task(task_id):
 
 if __name__ == "__main__":
     init_db()
-   app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=5000, debug=False)
